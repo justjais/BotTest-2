@@ -1,6 +1,6 @@
 ---
 - name: Ensure old versions of Docker are not installed.
-  package:
+  ansible.builtin.package:
     name:
       - docker
       - docker-common
@@ -8,49 +8,49 @@
     state: absent
 
 - name: Add Docker GPG key.
-  rpm_key:
+  when: docker_add_repo | bool
+  ansible.builtin.rpm_key:
     key: "{{ docker_yum_gpg_key }}"
     state: present
-  when: docker_add_repo | bool
 
 - name: Add Docker repository.
-  get_url:
+  when: docker_add_repo | bool
+  ansible.builtin.get_url:
     url: "{{ docker_yum_repo_url }}"
-    dest: '/etc/yum.repos.d/docker-{{ docker_edition }}.repo'
+    dest: /etc/yum.repos.d/docker-{{ docker_edition }}.repo
     owner: root
     group: root
-    mode: 0644
-  when: docker_add_repo | bool
+    mode: 420
 
 - name: Configure Docker Nightly repo.
-  ini_file:
-    dest: '/etc/yum.repos.d/docker-{{ docker_edition }}.repo'
-    section: 'docker-{{ docker_edition }}-nightly'
-    option: enabled
-    value: '{{ docker_yum_repo_enable_nightly }}'
-    mode: 0644
-    no_extra_spaces: true
   when: docker_add_repo | bool
+  community.general.ini_file:
+    dest: /etc/yum.repos.d/docker-{{ docker_edition }}.repo
+    section: docker-{{ docker_edition }}-nightly
+    option: enabled
+    value: "{{ docker_yum_repo_enable_nightly }}"
+    mode: 420
+    no_extra_spaces: true
 
 - name: Configure Docker Test repo.
-  ini_file:
-    dest: '/etc/yum.repos.d/docker-{{ docker_edition }}.repo'
-    section: 'docker-{{ docker_edition }}-test'
-    option: enabled
-    value: '{{ docker_yum_repo_enable_test }}'
-    mode: 0644
-    no_extra_spaces: true
   when: docker_add_repo | bool
+  community.general.ini_file:
+    dest: /etc/yum.repos.d/docker-{{ docker_edition }}.repo
+    section: docker-{{ docker_edition }}-test
+    option: enabled
+    value: "{{ docker_yum_repo_enable_test }}"
+    mode: 420
+    no_extra_spaces: true
 
 - name: Configure containerd on RHEL 8.
   block:
     - name: Ensure runc is not installed.
-      package:
+      ansible.builtin.package:
         name: runc
         state: absent
 
     - name: Ensure container-selinux is installed.
-      package:
+      ansible.builtin.package:
         name: container-selinux
         state: present
 
